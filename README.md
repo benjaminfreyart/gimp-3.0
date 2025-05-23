@@ -1,11 +1,8 @@
-# gimp-3.0
-Useful plugins, scripts and references for working with gimp 3.0
-
 # Guide: Writing Robust GIMP 3.0 Python Plugins on macOS (MacBook Pro M1, MacPorts GIMP)
 
 This document provides a technical guide for programmers wishing to write functional GIMP 3.0 plugins in Python. It focuses on the constraints and solutions discovered while working with a macOS system (Apple Silicon M1) using a MacPorts-installed version of GIMP 3.0. This guide is based on direct empirical testing and aims to highlight working patterns and help avoid common pitfalls.
 
-## Critical Setup & Environment Requirements
+## ❗ Critical Setup & Environment Requirements
 
 **Strict adherence to these points is essential for your plug-in to be recognized by GIMP 3.0 on this platform.**
 
@@ -36,7 +33,7 @@ This document provides a technical guide for programmers wishing to write functi
     # -*- coding: utf-8 -*- # Good practice for encoding
     ```
 
-## Essential Debugging Techniques for macOS (MacPorts GIMP 3.0)
+## 🛠️ Essential Debugging Techniques for macOS (MacPorts GIMP 3.0)
 
 These were indispensable for diagnosing issues:
 
@@ -63,7 +60,7 @@ These were indispensable for diagnosing issues:
     * Use `Gimp.message(f"Your debug message: {variable}")` to print messages to GIMP's Error Console (and often the terminal).
     * Use `print(f"Terminal debug: {variable}")` for messages that should *only* go to the terminal from which GIMP was launched.
 
-## Core Plug-in Structure & API Usage (GIMP 3.0 GI)
+## ✅ Core Plug-in Structure & API Usage (GIMP 3.0 GI)
 
 1.  **Subclass `Gimp.PlugIn`:**
     ```python
@@ -92,12 +89,13 @@ These were indispensable for diagnosing issues:
         procedure.set_menu_label(_("My Plugin Menu Label"))
         procedure.add_menu_path("<Image>/Filters/MyCustomMenu/")
         procedure.set_documentation(
-            _("Short blurb for Procedure Browser."),
-            _("More detailed help text for the plug-in."),
-            name # Or a custom help ID
+            _("Short help string for Procedure Browser & tooltips."), # This is often used as the blurb
+            _("More detailed help text for the plug-in (longer description)."),
+            name # Or a custom help ID for context help
         )
         procedure.set_attribution("Author Name", "Copyright Holder", "Year")
-        # procedure.set_blurb("A concise description for tooltips/status bar.") # Good practice
+        # procedure.set_blurb("...") was found to be unavailable (AttributeError) in tested GIMP 3.0.2 MacPorts.
+        # The first argument to set_documentation() often serves as the blurb.
         return procedure
     ```
 
@@ -156,6 +154,7 @@ This list reflects what **failed or was unreliable during our specific debugging
 * **`GLib.bindtextdomain(...)`:** `AttributeError` on the `GLib` object.
 * **`Gimp.ProcedureSensitivityMask.VECTORS` (and `.PATHS`):** Caused `AttributeError`. Use `Gimp.ProcedureSensitivityMask.DRAWABLE` and perform explicit checks for paths in the `run` method.
 * **`image.get_active_layer()`:** Not the GIMP 3 way. Use `drawables[0]` from the `run` arguments, or `image.get_active_drawable()`, or `image.get_selected_layers()`.
+* **`procedure.set_blurb("...")`:** `AttributeError: 'ImageProcedure' object has no attribute 'set_blurb'`. The first argument to `procedure.set_documentation()` often serves as the blurb/short help.
 
 ## ⚠️ Important Considerations
 
